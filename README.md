@@ -1,5 +1,5 @@
 # EverwingHax
-%% WRITTEN IN PYTHON 2.7.13 %%
+## WRITTEN IN PYTHON 2.7.13 ##
 Download both Everwing_data.py and p3lzstring.py
 place both into the same folder.
 
