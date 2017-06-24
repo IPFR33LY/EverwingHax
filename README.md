@@ -1,4 +1,7 @@
 # EverwingHax
+
+I add a release, v1.0 - This includes a python executable that you can use without worrying about if you have the right version of python or anything else. Just click and run.
+
 ## WRITTEN IN PYTHON 2.7.13 ##
 Download both Everwing_data.py and p3lzstring.py
 place both into the same folder.
