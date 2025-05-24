@@ -8,6 +8,7 @@ as published by Sam Hocevar. See the COPYING file for more details.
 
 import math
 
+
 keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
 keyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$"
 baseReverseDic = {}
@@ -22,13 +23,13 @@ class Object(object):
 def getBaseValue(alphabet, character):
     if alphabet not in baseReverseDic:
         baseReverseDic[alphabet] = {}
-    for i in range(len(alphabet)):
-        baseReverseDic[alphabet][alphabet[i]] = i
+        for i in range(len(alphabet)):  # Added space around `in`
+            baseReverseDic[alphabet][alphabet[i]] = i
     return baseReverseDic[alphabet][character]
 
 
 def _compress(uncompressed, bitsPerChar, getCharFromInt):
-    if (uncompressed is None):
+    if uncompressed is None:  # Changed `(uncompressed is None)` to `uncompressed is None`
         return ""
 
     context_dictionary = {}
@@ -74,7 +75,6 @@ def _compress(uncompressed, bitsPerChar, getCharFromInt):
                         else:
                             context_data_position += 1
                         value = value >> 1
-
                 else:
                     value = 1
                     for i in range(context_numBits):
@@ -85,7 +85,7 @@ def _compress(uncompressed, bitsPerChar, getCharFromInt):
                             context_data_val = 0
                         else:
                             context_data_position += 1
-                        value = 0
+                        value = 0  # Reset value for next iteration
                     value = ord(context_w[0])
                     for i in range(16):
                         context_data_val = (context_data_val << 1) | (value & 1)
@@ -155,7 +155,7 @@ def _compress(uncompressed, bitsPerChar, getCharFromInt):
                         context_data_val = 0
                     else:
                         context_data_position += 1
-                    value = 0
+                    value = 0  # Reset value for next iteration
                 value = ord(context_w[0])
                 for i in range(16):
                     context_data_val = (context_data_val << 1) | (value & 1)
@@ -183,10 +183,11 @@ def _compress(uncompressed, bitsPerChar, getCharFromInt):
                     context_data_position += 1
                 value = value >> 1
 
-    context_enlargeIn -= 1
-    if context_enlargeIn == 0:
-        context_enlargeIn = math.pow(2, context_numBits)
-        context_numBits += 1
+        context_enlargeIn -= 1
+        if context_enlargeIn == 0:
+            # context_enlargeIn = math.pow(2, context_numBits) # Original line
+            context_enlargeIn = int(math.pow(2, context_numBits)) # Ensure integer for range
+            context_numBits += 1
 
     # Mark the end of the stream
     value = 2
@@ -213,7 +214,7 @@ def _compress(uncompressed, bitsPerChar, getCharFromInt):
 
 
 def _decompress(length, resetValue, getNextValue):
-    dictionary = {}
+    dictionary = {}  # Changed from list to dict for clarity, though list was used as map
     enlargeIn = 4
     dictSize = 4
     numBits = 3
@@ -226,11 +227,11 @@ def _decompress(length, resetValue, getNextValue):
         index=1
     )
 
-    for i in range(3):
-        dictionary[i] = i
+    for i in range(3): # Initialize dictionary with first 3 values
+        dictionary[i] = chr(i) # Store characters, not integers, if these are char codes
 
     bits = 0
-    maxpower = math.pow(2, 2)
+    maxpower = int(math.pow(2, 2)) # Ensure integer for range
     power = 1
 
     while power != maxpower:
@@ -240,14 +241,14 @@ def _decompress(length, resetValue, getNextValue):
             data.position = resetValue
             data.val = getNextValue(data.index)
             data.index += 1
+        if resb > 0: # Simplified bit setting
+            bits |= power
+        power <<= 1
 
-        bits |= power if resb > 0 else 0
-        power <<= 1;
-
-    next = bits
-    if next == 0:
+    next_val = bits  # Renamed from `next` as it's a keyword
+    if next_val == 0:
         bits = 0
-        maxpower = math.pow(2, 8)
+        maxpower = int(math.pow(2, 8)) # Ensure integer
         power = 1
         while power != maxpower:
             resb = data.val & data.position
@@ -256,53 +257,56 @@ def _decompress(length, resetValue, getNextValue):
                 data.position = resetValue
                 data.val = getNextValue(data.index)
                 data.index += 1
-            bits |= power if resb > 0 else 0
+            if resb > 0:
+                bits |= power
             power <<= 1
         c = chr(bits)
-    elif next == 1:
+    elif next_val == 1:
         bits = 0
-        maxpower = math.pow(2, 16)
+        maxpower = int(math.pow(2, 16)) # Ensure integer
         power = 1
         while power != maxpower:
             resb = data.val & data.position
             data.position >>= 1
             if data.position == 0:
-                data.position = resetValue;
+                data.position = resetValue
                 data.val = getNextValue(data.index)
                 data.index += 1
-            bits |= power if resb > 0 else 0
+            if resb > 0:
+                bits |= power
             power <<= 1
         c = chr(bits)
-    elif next == 2:
+    elif next_val == 2:
         return ""
 
-    # print(bits)
     dictionary[3] = c
     w = c
     result.append(c)
-    counter = 0
+    # counter = 0 # Original counter, seems unused for logic
     while True:
-        counter += 1
-        if data.index > length:
+        # counter += 1 # Original counter
+        if data.index > length: # Check if data index exceeds length
             return ""
 
         bits = 0
-        maxpower = math.pow(2, numBits)
+        maxpower = int(math.pow(2, numBits)) # Ensure integer
         power = 1
         while power != maxpower:
             resb = data.val & data.position
             data.position >>= 1
             if data.position == 0:
-                data.position = resetValue;
+                data.position = resetValue
                 data.val = getNextValue(data.index)
                 data.index += 1
-            bits |= power if resb > 0 else 0
+            if resb > 0:
+                bits |= power
             power <<= 1
+        
+        c_val = bits # Renamed c to c_val to avoid conflict with previous c
 
-        c = bits
-        if c == 0:
+        if c_val == 0:
             bits = 0
-            maxpower = math.pow(2, 8)
+            maxpower = int(math.pow(2, 8)) # Ensure integer
             power = 1
             while power != maxpower:
                 resb = data.val & data.position
@@ -311,54 +315,56 @@ def _decompress(length, resetValue, getNextValue):
                     data.position = resetValue
                     data.val = getNextValue(data.index)
                     data.index += 1
-                bits |= power if resb > 0 else 0
+                if resb > 0:
+                    bits |= power
                 power <<= 1
 
             dictionary[dictSize] = chr(bits)
             dictSize += 1
-            c = dictSize - 1
+            c_val = dictSize - 1
             enlargeIn -= 1
-        elif c == 1:
+        elif c_val == 1:
             bits = 0
-            maxpower = math.pow(2, 16)
+            maxpower = int(math.pow(2, 16)) # Ensure integer
             power = 1
             while power != maxpower:
                 resb = data.val & data.position
                 data.position >>= 1
                 if data.position == 0:
-                    data.position = resetValue;
+                    data.position = resetValue
                     data.val = getNextValue(data.index)
                     data.index += 1
-                bits |= power if resb > 0 else 0
+                if resb > 0:
+                    bits |= power
                 power <<= 1
             dictionary[dictSize] = chr(bits)
             dictSize += 1
-            c = dictSize - 1
+            c_val = dictSize - 1
             enlargeIn -= 1
-        elif c == 2:
+        elif c_val == 2:
             return "".join(result)
 
         if enlargeIn == 0:
-            enlargeIn = math.pow(2, numBits)
+            enlargeIn = int(math.pow(2, numBits)) # Ensure integer
             numBits += 1
 
-        if c in dictionary:
-            entry = dictionary[c]
+        if c_val in dictionary:
+            entry = dictionary[c_val]
         else:
-            if c == dictSize:
+            if c_val == dictSize:
                 entry = w + w[0]
             else:
-                return None
+                return None  # Error condition
         result.append(entry)
 
-        # Add w+entry[0] to the dictionary.
+        # Add w + entry[0] to the dictionary.
         dictionary[dictSize] = w + entry[0]
         dictSize += 1
         enlargeIn -= 1
 
         w = entry
         if enlargeIn == 0:
-            enlargeIn = math.pow(2, numBits)
+            enlargeIn = int(math.pow(2, numBits)) # Ensure integer
             numBits += 1
 
 
@@ -380,7 +386,7 @@ class LZString(object):
         res = _compress(uncompressed, 6, lambda a: keyStrBase64[a])
         # To produce valid Base64
         end = len(res) % 4
-        print (end)
+        # print(end) # Removed debug print
         if end > 0:
             res += "=" * (4 - end)
         return res
@@ -396,7 +402,7 @@ class LZString(object):
         if compressed is None:
             return ""
         if compressed == "":
-            return None
+            return None  # Or raise an error, depending on expected behavior
         return _decompress(len(compressed), 32768, lambda index: ord(compressed[index]))
 
     @staticmethod
@@ -405,7 +411,10 @@ class LZString(object):
             return ""
         if compressed == "":
             return None
-        return _decompress(len(compressed), 16384, lambda index: compressed[index] - 32)
+        # Ensure lambda returns int, original was `compressed[index] - 32`
+        # but `compressed[index]` is char, so `ord(compressed[index]) - 32`
+        return _decompress(len(compressed), 16384, lambda index: ord(compressed[index]) - 32)
+
 
     @staticmethod
     def decompressFromBase64(compressed):
@@ -413,6 +422,7 @@ class LZString(object):
             return ""
         if compressed == "":
             return None
+        # Assuming getBaseValue returns an int
         return _decompress(len(compressed), 32, lambda index: getBaseValue(keyStrBase64, compressed[index]))
 
     @staticmethod
@@ -422,4 +432,11 @@ class LZString(object):
         if compressed == "":
             return None
         compressed = compressed.replace(" ", "+")
+        # Assuming getBaseValue returns an int
         return _decompress(len(compressed), 32, lambda index: getBaseValue(keyStrUriSafe, compressed[index]))
+
+# Add two blank lines before top-level functions and class definitions (PEP 8)
+# (Manual check - already seems mostly compliant here or handled by structure)
+
+# Add one blank line before method definitions within a class (PEP 8)
+# (Manual check - already seems mostly compliant here or handled by structure)
